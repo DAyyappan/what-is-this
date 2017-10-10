@@ -5,23 +5,33 @@ import numpy as np
 
 # generate set of students
 def initializeClass(classSize):
-    classIDs = np.zeros((classSize+1, 2))
-    print("classIDs shape = " + str(classIDs.shape))
+    # Each student is a dictionary with name, positive pairs, negative pairs
+    studentInfo = [{'Name':'', 'PositivePairs':[], 'NegativePairs':[]} for x in range(classSize+1)]
+    #print("Student Info shape = " + str(studentInfo.shape))
 
-    return classIDs
+    return studentInfo
 
 #populate class with 2 students each student shouldn't sit with
-def populateNegatives(classList, numNegs = 2):
-    for student in range(len(classList)):
-        negatives = np.random.random_integers(1, len(classList+1), numNegs)
+def populateStudentInfo(studentInfo, numPos = 2, numNeg = 1):
+
+    s = 0
+    i = 1
+    for student in studentInfo:
+        student['Name'] = "Student %d" % s
+        negatives = np.random.random_integers(1, len(studentInfo)-1, numNeg)
+        positives = np.random.random_integers(1, len(studentInfo)-1, numPos)
         while True:
-            if int(student) in negatives:
-                negatives = np.random.random_integers(1, len(classList+1), numNegs)
+            if (s in negatives) or (s in positives):
+                negatives = np.random.random_integers(1, len(studentInfo)-1, numNeg)
+                positives = np.random.random_integers(1, len(studentInfo)-1, numPos)
+                i += 1
             else:
-                classList[student] = negatives
+                student['NegativePairs'] = negatives
+                student['PositivePairs'] = positives
+                s += 1
                 break
 
-    return classList
+    return studentInfo
 
 
 # function that returns a matrix of students in groups
@@ -91,8 +101,18 @@ def generateValidSeats(classSize, numGroups, groupSize):
     return negativesPopulated, seatsAssigned
 
 
-classList, seatsAssigned = generateValidSeats(30, 6, 5)
-print("Classlist: ")
-print(str(classList))
-print("Seating Chart: ")
-print(str(seatsAssigned))
+def testProgramComplete():
+    classList, seatsAssigned = generateValidSeats(30, 6, 5)
+    print("Classlist: ")
+    print(str(classList))
+    print("Seating Chart: ")
+    print(str(seatsAssigned))
+
+def testProgram():
+    testClass = initializeClass(5)
+    populatedClass = populateStudentInfo(testClass, 5, 2)
+
+    for s in range(len(populatedClass)):
+        print("Student %d works well with " % s + str(populatedClass[s]['PositivePairs']) + " but not well with " + str(populatedClass[s]['NegativePairs']))
+
+testProgram()
