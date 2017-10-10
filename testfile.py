@@ -112,23 +112,27 @@ def testProgramComplete():
     print(str(seatsAssigned))
 
 def testProgram():
-    testClass = initializeClass(22)
-    populatedClass = populateStudentInfo(testClass, 3, 1)
+    testClass = initializeClass(24)
+    populatedClass = populateStudentInfo(testClass, 4, 2)
 
     for s in range(len(populatedClass)):
         print("Student %d works well with " % s + str(populatedClass[s]['PositivePairs']) + " but not well with " + str(populatedClass[s]['NegativePairs']))
 
     maxScore = 0
     bestSeats = np.zeros((3, 3))
-    for n in range(1000):
+    validCharts = 0
+    attempts = 10000
+    for n in range(attempts):
         seatsAssigned = assignSeats(populatedClass, 6, 4)
         conflicts = checkForConflicts(seatsAssigned, populatedClass)
 
-        if (conflicts > maxScore):
-            bestSeats = seatsAssigned
-            maxScore = conflicts
+        if (conflicts > 0):
+            validCharts += 1
+            if (conflicts > maxScore):
+                bestSeats = seatsAssigned
+                maxScore = conflicts
 
-    print("Best conflict score = %d" % maxScore)
+    print("Best conflict score = %d after %d valid seating charts out of %d " % (maxScore, validCharts, attempts))
     print("Best Seating Chart:" )
     print(str(bestSeats))
 
