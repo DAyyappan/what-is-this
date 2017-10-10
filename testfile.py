@@ -6,8 +6,7 @@ import numpy as np
 # generate set of students
 def initializeClass(classSize):
     # Each student is a dictionary with name, positive pairs, negative pairs
-    studentInfo = [{'Name':'', 'PositivePairs':[], 'NegativePairs':[]} for x in range(classSize+1)]
-    #print("Student Info shape = " + str(studentInfo.shape))
+    studentInfo = [{'Name':'', 'PositivePairs':[], 'NegativePairs':[]} for x in range(classSize)]
 
     return studentInfo
 
@@ -15,16 +14,14 @@ def initializeClass(classSize):
 def populateStudentInfo(studentInfo, numPos = 2, numNeg = 1):
 
     s = 0
-    i = 1
     for student in studentInfo:
         student['Name'] = "Student %d" % s
-        negatives = np.random.random_integers(1, len(studentInfo)-1, numNeg)
-        positives = np.random.random_integers(1, len(studentInfo)-1, numPos)
+        negatives = np.random.random_integers(0, len(studentInfo)-1, numNeg)
+        positives = np.random.random_integers(0, len(studentInfo)-1, numPos)
         while True:
             if (s in negatives) or (s in positives):
-                negatives = np.random.random_integers(1, len(studentInfo)-1, numNeg)
-                positives = np.random.random_integers(1, len(studentInfo)-1, numPos)
-                i += 1
+                negatives = np.random.random_integers(0, len(studentInfo)-1, numNeg)
+                positives = np.random.random_integers(0, len(studentInfo)-1, numPos)
             else:
                 student['NegativePairs'] = negatives
                 student['PositivePairs'] = positives
@@ -35,18 +32,17 @@ def populateStudentInfo(studentInfo, numPos = 2, numNeg = 1):
 
 
 # function that returns a matrix of students in groups
-def assignSeats(classList, numGroups, groupSize):
+def assignSeats(studentInfo, numGroups, groupSize):
     seatingChart = np.zeros((numGroups,groupSize))
-    assigned = np.zeros(len(classList), dtype = bool)
+    assigned = np.zeros(len(studentInfo), dtype = bool)
 
     groupNum = -1
     seatNum = 0
     iterations = 0
-    #print ("empty seatching chart looks like this: " + str(seatingChart))
 
-    for student in range(1, len(classList)):
+    for student in range(0, len(studentInfo)):
         while True:
-            n = np.random.random_integers(1, len(classList)-1)
+            n = np.random.random_integers(0, len(studentInfo)-1)
             iterations += 1
             if (not assigned[n]):
                 if(groupNum == (numGroups-1)):
@@ -64,55 +60,84 @@ def assignSeats(classList, numGroups, groupSize):
     return seatingChart
 
 #
-def checkForConflicts(seatingChart, classList):
+def checkForConflicts(seatingChart, studentInfo):
+    score = 0
     for group in range(len(seatingChart)):
-        for seat in range(len(seatingChart[0])):
-            student = int(seatingChart[group][seat])
-            #print("Checking student %d" % student)
-            #print("Student %d shouldn't sit with " % student + str(classList[student]))
-            for i in range(len(classList[student])):
-                if classList[student][i] in seatingChart[group]:
-                    #print("check for conflicts failed because student %d" % student + " can't sit with " + str(classList[student][i]) + "but their group is " + str(seatingChart[group]) )
-                    return True
 
-    return False
+        for seat in range(len(seatingChart[0])):
+
+            student = int(seatingChart[group][seat])
+
+            for neg in studentInfo[student]['NegativePairs']:
+                if neg in seatingChart[group]:
+                    return -1
+
+            for pos in studentInfo[student]['PositivePairs']:
+                if pos in seatingChart[group]:
+                    score += 1
+
+    return score
 
 def generateValidSeats(classSize, numGroups, groupSize):
     testClass = initializeClass(classSize)
     print("class Initialized")
 
-    negativesPopulated = populateNegatives(testClass)
-    print("negatives populated")
-    print(str(negativesPopulated))
+    studentsPopulated = populateStudentInfo(testClass)
+    print("Student Info populated")
+    print(str(studentsPopulated))
 
-    seatsAssigned = assignSeats(negativesPopulated, numGroups, groupSize)
+    seatsAssigned = assignSeats(studentsPopulated, numGroups, groupSize)
     attempt = 0
 
     while True:
-        if (checkForConflicts(seatsAssigned, negativesPopulated)):
+        conflicts = checkForConflicts(seatsAssigned, studentsPopulated)
+        if (conflicts <= 0):
             attempt += 1
             if (attempt % 100 == 0):
                 print("Attempt no. %d failed" % attempt)
-            seatsAssigned = assignSeats(negativesPopulated, numGroups, groupSize)
+            seatsAssigned = assignSeats(studentsPopulated, numGroups, groupSize)
         else:
             print("Attempt no. %d succeeded! " % attempt)
+            print("Seating chart score = %d" & conflicts)
             break
 
-    return negativesPopulated, seatsAssigned
+    return studentsPopulated, seatsAssigned
 
 
 def testProgramComplete():
-    classList, seatsAssigned = generateValidSeats(30, 6, 5)
-    print("Classlist: ")
-    print(str(classList))
+    studentInfo, seatsAssigned = generateValidSeats(12, 4, 3)
+    print("studentInfo: ")
+    print(str(studentInfo))
     print("Seating Chart: ")
     print(str(seatsAssigned))
 
 def testProgram():
-    testClass = initializeClass(5)
-    populatedClass = populateStudentInfo(testClass, 5, 2)
+    testClass = initializeClass(22)
+    populatedClass = populateStudentInfo(testClass, 3, 1)
 
     for s in range(len(populatedClass)):
         print("Student %d works well with " % s + str(populatedClass[s]['PositivePairs']) + " but not well with " + str(populatedClass[s]['NegativePairs']))
 
+    maxScore = 0
+    bestSeats = np.zeros((3, 3))
+    for n in range(1000):
+        seatsAssigned = assignSeats(populatedClass, 6, 4)
+        conflicts = checkForConflicts(seatsAssigned, populatedClass)
+
+        if (conflicts > maxScore):
+            bestSeats = seatsAssigned
+            maxScore = conflicts
+
+    print("Best conflict score = %d" % maxScore)
+    print("Best Seating Chart:" )
+    print(str(bestSeats))
+
+
 testProgram()
+
+
+#To do:
+# Add zero as an empty student (to fill in empty seats)
+# Make generateValidSeats work!
+# Add file IO
+#
