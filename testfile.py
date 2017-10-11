@@ -2,6 +2,8 @@
 
 from bs4 import BeautifulSoup as bs
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 # generate set of students
 def initializeClass(classSize):
@@ -41,7 +43,7 @@ def assignSeats(studentInfo, numGroups, groupSize):
     seatingChart = np.zeros((numGroups,groupSize))
     assigned = np.zeros(len(studentInfo), dtype = bool)
 
-    groupNum = -1
+    groupNum = 0
     seatNum = 0
     iterations = 0
 
@@ -49,20 +51,30 @@ def assignSeats(studentInfo, numGroups, groupSize):
         while True:
             n = np.random.random_integers(1, len(studentInfo)-1)
             iterations += 1
+            badPairs = []
             if (not assigned[n]):
-                if(groupNum == (numGroups-1)):
-                    seatNum += 1
-                    groupNum = 0
-                else:
-                    groupNum += 1
-                seatingChart[groupNum, seatNum] = n
-                #print ("Student %d assigned to group %d, seat %d. " % (n, groupNum+1, seatNum+1))
-                assigned[n] = True
-                break
+                for x in seatingChart[groupNum]:
+                    for s in studentInfo[int(x)]['NegativePairs']:
+                        badPairs.append(int(s))
+                #print("badPairs for student %d is " % n + str(badPairs) + " and group %d is " %groupNum + str(seatingChart[groupNum]))
+                if (n not in badPairs):
+                    seatingChart[groupNum, seatNum] = n
+                    assigned[n] = True
+                    #print ("Student %d assigned to group %d, seat %d. " % (n, groupNum+1, seatNum+1))
+                    if(groupNum == (numGroups-1)):
+                        seatNum += 1
+                        groupNum = 0
+                    else:
+                        groupNum += 1
 
+
+                    break
+                else:
+                    #print("======= Invalid assignment. Construction new chart. =======")
+                    return False, [0]
     #print ("%d iterations completed" % iterations)
 
-    return seatingChart
+    return True, seatingChart
 
 #
 def checkForConflicts(seatingChart, studentInfo, FMR):
@@ -133,30 +145,39 @@ def testProgram():
     maxScore = 0
     bestSeats = np.zeros((3, 3))
     validCharts = 0
-    attempts = 100000
+    attempts = 10000
+    attemptsX = []
+    attemptsY = []
     classArrangement = {'F':[1], 'M':[2,3,4,5], 'R':[6]}
 
     for n in range(attempts):
-        seatsAssigned = assignSeats(populatedClass, 6, 4)
-        conflicts = checkForConflicts(seatsAssigned, populatedClass, classArrangement)
+        success, seatsAssigned = assignSeats(populatedClass, 6, 4)
+        while (not success):
+            success, seatsAssigned = assignSeats(populatedClass, 6, 4)
 
+        conflicts = checkForConflicts(seatsAssigned, populatedClass, classArrangement)
+        attemptsX.append(n)
+        if (n % 1000 == 0):
+            print ("attempt %d completed " % n)
         if (conflicts > 0):
             validCharts += 1
             if (conflicts > maxScore):
                 bestSeats = seatsAssigned
                 maxScore = conflicts
+        attemptsY.append(maxScore)
 
     print("Best conflict score = %d after %d valid seating charts out of %d " % (maxScore, validCharts, attempts))
     print("Best Seating Chart:" )
     print(str(bestSeats))
 
+    plt.plot(attemptsX,attemptsY)
+    plt.show()
 
 
 testProgram()
 
 
 #To do:
-# Add front middle rear seating preferences
 # Make generateValidSeats work!
 # Add file IO
 #
