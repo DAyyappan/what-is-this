@@ -6,7 +6,7 @@ import numpy as np
 # generate set of students
 def initializeClass(classSize):
     # Each student is a dictionary with name, positive pairs, negative pairs
-    studentInfo = [{'Name':'', 'PositivePairs':[], 'NegativePairs':[]} for x in range(classSize+1)]
+    studentInfo = [{'Name':'', 'PositivePairs':[], 'NegativePairs':[], 'LocationPref':[]} for x in range(classSize+1)]
 
     return studentInfo
 
@@ -25,11 +25,16 @@ def populateStudentInfo(studentInfo, numPos = 2, numNeg = 1):
             else:
                 student['NegativePairs'] = negatives
                 student['PositivePairs'] = positives
+                student['LocationPref'].append(getRandomLocationPref())
                 s += 1
                 break
 
     return studentInfo
 
+def getRandomLocationPref():
+    r = str(np.random.random_integers(0,2))
+    key = {'0':'F', '1':'M', '2':'R'}
+    return key[r]
 
 # function that returns a matrix of students in groups
 def assignSeats(studentInfo, numGroups, groupSize):
@@ -60,7 +65,7 @@ def assignSeats(studentInfo, numGroups, groupSize):
     return seatingChart
 
 #
-def checkForConflicts(seatingChart, studentInfo):
+def checkForConflicts(seatingChart, studentInfo, FMR):
     score = 0
     for group in range(len(seatingChart)):
 
@@ -75,6 +80,12 @@ def checkForConflicts(seatingChart, studentInfo):
             for pos in studentInfo[student]['PositivePairs']:
                 if pos in seatingChart[group]:
                     score += 1
+
+            for loc in studentInfo[student]['LocationPref']:
+                if (group+1) in FMR[loc]:
+                    score += 1
+                if ((loc == 'F') and ((group+1) in FMR['R'])) or ((loc == 'R') and ((group+1) in FMR['F'])):
+                    score -= 2
 
     return score
 
@@ -112,19 +123,22 @@ def testProgramComplete():
     print(str(seatsAssigned))
 
 def testProgram():
-    testClass = initializeClass(22)
+    testClass = initializeClass(24)
     populatedClass = populateStudentInfo(testClass, 4, 2)
 
     for s in range(len(populatedClass)):
-        print("Student %d works well with " % s + str(populatedClass[s]['PositivePairs']) + " but not well with " + str(populatedClass[s]['NegativePairs']))
+        print("Student %d works well with " % s + str(populatedClass[s]['PositivePairs']) + " but not well with " + str(populatedClass[s]['NegativePairs']) +
+            " and likes to sit in the " + str(populatedClass[s]['LocationPref']))
 
     maxScore = 0
     bestSeats = np.zeros((3, 3))
     validCharts = 0
-    attempts = 10000
+    attempts = 100000
+    classArrangement = {'F':[1], 'M':[2,3,4,5], 'R':[6]}
+
     for n in range(attempts):
         seatsAssigned = assignSeats(populatedClass, 6, 4)
-        conflicts = checkForConflicts(seatsAssigned, populatedClass)
+        conflicts = checkForConflicts(seatsAssigned, populatedClass, classArrangement)
 
         if (conflicts > 0):
             validCharts += 1
@@ -137,11 +151,12 @@ def testProgram():
     print(str(bestSeats))
 
 
+
 testProgram()
 
 
 #To do:
-# Add zero as an empty student (to fill in empty seats)
+# Add front middle rear seating preferences
 # Make generateValidSeats work!
 # Add file IO
 #
