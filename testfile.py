@@ -6,22 +6,22 @@ import numpy as np
 # generate set of students
 def initializeClass(classSize):
     # Each student is a dictionary with name, positive pairs, negative pairs
-    studentInfo = [{'Name':'', 'PositivePairs':[], 'NegativePairs':[]} for x in range(classSize)]
+    studentInfo = [{'Name':'', 'PositivePairs':[], 'NegativePairs':[]} for x in range(classSize+1)]
 
     return studentInfo
 
 #populate class with 2 students each student shouldn't sit with
 def populateStudentInfo(studentInfo, numPos = 2, numNeg = 1):
 
-    s = 0
-    for student in studentInfo:
+    s = 1
+    for student in studentInfo[1:]:
         student['Name'] = "Student %d" % s
-        negatives = np.random.random_integers(0, len(studentInfo)-1, numNeg)
-        positives = np.random.random_integers(0, len(studentInfo)-1, numPos)
+        negatives = np.random.random_integers(1, len(studentInfo), numNeg)
+        positives = np.random.random_integers(1, len(studentInfo), numPos)
         while True:
             if (s in negatives) or (s in positives):
-                negatives = np.random.random_integers(0, len(studentInfo)-1, numNeg)
-                positives = np.random.random_integers(0, len(studentInfo)-1, numPos)
+                negatives = np.random.random_integers(1, len(studentInfo), numNeg)
+                positives = np.random.random_integers(1, len(studentInfo), numPos)
             else:
                 student['NegativePairs'] = negatives
                 student['PositivePairs'] = positives
@@ -40,9 +40,9 @@ def assignSeats(studentInfo, numGroups, groupSize):
     seatNum = 0
     iterations = 0
 
-    for student in range(0, len(studentInfo)):
+    for student in range(1, len(studentInfo)):
         while True:
-            n = np.random.random_integers(0, len(studentInfo)-1)
+            n = np.random.random_integers(1, len(studentInfo)-1)
             iterations += 1
             if (not assigned[n]):
                 if(groupNum == (numGroups-1)):
@@ -51,7 +51,7 @@ def assignSeats(studentInfo, numGroups, groupSize):
                 else:
                     groupNum += 1
                 seatingChart[groupNum, seatNum] = n
-                #print ("Student %s assigned to group %d, seat %d. " % (n, groupNum+1, seatNum+1))
+                #print ("Student %d assigned to group %d, seat %d. " % (n, groupNum+1, seatNum+1))
                 assigned[n] = True
                 break
 
@@ -112,7 +112,7 @@ def testProgramComplete():
     print(str(seatsAssigned))
 
 def testProgram():
-    testClass = initializeClass(24)
+    testClass = initializeClass(22)
     populatedClass = populateStudentInfo(testClass, 4, 2)
 
     for s in range(len(populatedClass)):
