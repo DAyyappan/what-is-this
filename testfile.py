@@ -3,12 +3,31 @@
 from bs4 import BeautifulSoup as bs
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
 
 
 # generate set of students
 def initializeClass(classSize):
     # Each student is a dictionary with name, positive pairs, negative pairs
     studentInfo = [{'Name':'', 'PositivePairs':[], 'NegativePairs':[], 'LocationPref':[]} for x in range(classSize+1)]
+
+    return studentInfo
+
+def importClass(fileName):
+    f = open(fileName)
+    csv_f = csv.reader(f)
+    next(csv_f)
+    studentInfo = [{'Name':'', 'PositivePairs':[], 'NegativePairs':[], 'LocationPref':[]}]
+
+    for row in csv_f:
+        index = int(row[0])
+        Name = row[1]
+        PositivePairs = [int(pp) for pp in row[2].split(',')]
+        NegativePairs = [int(np) for np in row[3].split(',')]
+        LocationPref = [lp.upper().strip() for lp in row[4].split(',')]
+        newDict = {'Name':Name, 'PositivePairs':PositivePairs, 'NegativePairs':NegativePairs, 'LocationPref':LocationPref}
+        studentInfo.append(newDict)
+        #print("Student %d data: " % index + str(studentInfo[index]))
 
     return studentInfo
 
@@ -87,6 +106,7 @@ def checkForConflicts(seatingChart, studentInfo, FMR):
 
             for neg in studentInfo[student]['NegativePairs']:
                 if neg in seatingChart[group]:
+                    #print("Conflict check failed because Student %d shouldn't sit with " % student + str(studentInfo[student]['NegativePairs']) + " but their group is " + str(seatingChart[group]))
                     return -1
 
             for pos in studentInfo[student]['PositivePairs']:
@@ -126,15 +146,7 @@ def generateValidSeats(classSize, numGroups, groupSize):
 
     return studentsPopulated, seatsAssigned
 
-
-def testProgramComplete():
-    studentInfo, seatsAssigned = generateValidSeats(12, 4, 3)
-    print("studentInfo: ")
-    print(str(studentInfo))
-    print("Seating Chart: ")
-    print(str(seatsAssigned))
-
-def testProgram():
+def testProgramSimulation():
     testClass = initializeClass(24)
     populatedClass = populateStudentInfo(testClass, 4, 2)
 
@@ -156,6 +168,7 @@ def testProgram():
             success, seatsAssigned = assignSeats(populatedClass, 6, 4)
 
         conflicts = checkForConflicts(seatsAssigned, populatedClass, classArrangement)
+        print("conflicts score = %d " % conflicts)
         attemptsX.append(n)
         if (n % 1000 == 0):
             print ("attempt %d completed " % n)
@@ -173,8 +186,44 @@ def testProgram():
     plt.plot(attemptsX,attemptsY)
     plt.show()
 
+def testProgramImport(fileName):
+    populatedClass = importClass(fileName)
+    for s in range(len(populatedClass)):
+        print("Student %d works well with " % s + str(populatedClass[s]['PositivePairs']) + " but not well with " + str(populatedClass[s]['NegativePairs']) +
+            " and likes to sit in the " + str(populatedClass[s]['LocationPref']))
 
-testProgram()
+    maxScore = 0
+    bestSeats = np.zeros((3, 3))
+    validCharts = 0
+    attempts = 1000
+    attemptsX = []
+    attemptsY = []
+    classArrangement = {'F':[1], 'M':[2,3], 'R':[4]}
+
+    for n in range(attempts):
+        success, seatsAssigned = assignSeats(populatedClass, 4, 4)
+        while (not success):
+            success, seatsAssigned = assignSeats(populatedClass, 4, 4)
+        #print ("seating chart success " + str(success) + "with this seating chart:")
+        print(str(seatsAssigned))
+        conflicts = checkForConflicts(seatsAssigned, populatedClass, classArrangement)
+        #print("conflicts score = %d " % conflicts)
+        attemptsX.append(n)
+        if (n % 100 == 0):
+            print ("attempt %d completed " % n)
+        if (conflicts > 0):
+            validCharts += 1
+            if (conflicts > maxScore):
+                bestSeats = seatsAssigned
+                maxScore = conflicts
+        attemptsY.append(maxScore)
+
+    print("Best conflict score = %d after %d valid seating charts out of %d " % (maxScore, validCharts, attempts))
+    print("Best Seating Chart:" )
+    print(str(bestSeats))
+
+
+testProgramImport('Sample student data - Sheet1.csv')
 
 
 #To do:
